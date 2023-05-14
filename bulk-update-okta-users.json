@@ -1,0 +1,158 @@
+{
+  "metadata": {
+    "name": "Bulk update users in Okta Directory",
+    "version": "1.0.0",
+    "subtitle": "This recipe bulk updates user profile information in Okta Directory using data from a CSV file.",
+    "author": "Your Name",
+    "description": "This recipe bulk updates user profile information in Okta Directory using data from a CSV file.",
+    "icon": "",
+    "category": "Okta",
+    "tags": [
+      "Okta",
+      "Bulk Update",
+      "CSV"
+    ],
+    "UI_Configuration": {
+      "alignment": "CENTER"
+    }
+  },
+  "config": {
+    "auth_key": {
+      "title": "Okta API Key",
+      "description": "Enter your Okta API key here",
+      "type": "string",
+      "required": true
+    },
+    "subdomain": {
+      "title": "Okta Subdomain",
+      "description": "Enter your Okta subdomain here (e.g. dev-123456)",
+      "type": "string",
+      "required": true
+    },
+    "csv_file": {
+      "title": "CSV file",
+      "description": "Select the CSV file containing user profile information to update",
+      "type": "file",
+      "required": true,
+      "multiple": false
+    },
+    "retry_count": {
+      "title": "Retry count",
+      "description": "Enter the number of times to retry updating a user if an error occurs",
+      "type": "number",
+      "default": 3,
+      "required": true
+    }
+  },
+  "triggers": [
+    {
+      "title": "New row in CSV",
+      "subtitle": "Triggers when a new row is added to the CSV file",
+      "type": "watch",
+      "config": {
+        "file": "{{csv_file}}",
+        "worksheet": "Sheet1",
+        "interval": 5,
+        "fields": [
+          {
+            "name": "FirstName",
+            "column": "A",
+            "type": "string"
+          },
+          {
+            "name": "LastName",
+            "column": "B",
+            "type": "string"
+          },
+          {
+            "name": "Email",
+            "column": "C",
+            "type": "string"
+          },
+          {
+            "name": "Groups",
+            "column": "D",
+            "type": "array"
+          },
+          {
+            "name": "CustomAttribute",
+            "column": "E",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ],
+  "actions": [
+    {
+      "title": "Update user in Okta",
+      "subtitle": "Updates a user's profile information in Okta Directory",
+      "type": "poll",
+      "config": {
+        "poll_interval": 0,
+        "max_polls": "{{batch_size}}",
+        "fail_on_errors": false,
+        "retry_count": "{{retry_count}}"
+      },
+      "authentication": {
+        "api_key": "{{auth_key}}",
+        "subdomain": "{{subdomain}}"
+      },
+      "fields": [
+        {
+          "name": "FirstName",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "LastName",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "Email",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "Groups",
+          "type": "array",
+          "required": false
+        },
+        {
+          "name": "CustomAttribute",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "status",
+          "type": "string"
+        },
+        {
+          "name": "message",
+          "type": "string"
+        }
+      ],
+      "execute": {
+        "body": {
+          "profile": {
+            "firstName": "{{FirstName}}",
+            "lastName": "{{LastName}}",
+            "email": "{{Email}}",
+            "customAttribute": "{{CustomAttribute}}"
+          },
+          "groupIds": "{{Groups}}"
+        },
+        "verb": "PUT",
+        "url": "https://{{subdomain}}.okta.com/api/v1/users/{{Email}}"
+      }
+    }
+    
+    ]
+    }
